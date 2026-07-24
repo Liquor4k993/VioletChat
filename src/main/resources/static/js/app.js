@@ -107,7 +107,11 @@ async function loadLandingFeed() {
             const hasImage = post.imageUrl;
             let imageHtml = '';
             if (hasImage) {
-                imageHtml = `<img src="${post.imageUrl}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin-top:12px;cursor:pointer;" onclick="window.open('${post.imageUrl}')">`;
+                imageHtml = `
+                    <div class="post-image-wrapper">
+                        <img src="${post.imageUrl}" class="post-image landing-image" onclick="window.open('${post.imageUrl}')">
+                    </div>
+                `;
             }
 
             return `
@@ -228,7 +232,32 @@ function initChat() {
     connectWebSocket();
     setupNavigation();
     setupImageUpload();
-    openGroupChat();
+    showDefaultTab();
+}
+
+// ===== ПОКАЗАТЬ ЧАТ ПО УМОЛЧАНИЮ =====
+function showDefaultTab() {
+    document.querySelectorAll('#chatContent, #feedContent, #friendsContent, #settingsContent')
+        .forEach(el => el.style.display = 'none');
+
+    document.getElementById('chatContent').style.display = 'flex';
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.id === 'chatTab') {
+            btn.classList.add('active');
+        }
+    });
+
+    document.getElementById('chatTitle').textContent = '💬 Общий чат';
+    document.getElementById('chatSubtitle').textContent = 'Все пользователи';
+
+    document.querySelector('.message-input-area').style.display = 'flex';
+    document.getElementById('messagesContainer').style.display = 'flex';
+    document.getElementById('feedMainContainer').style.display = 'none';
+    document.getElementById('createPostBtnMain').style.display = 'none';
+
+    loadGroupMessages();
 }
 
 // ===== NAVIGATION =====
@@ -255,20 +284,47 @@ function setupNavigation() {
     });
 
     document.getElementById('createPostBtn')?.addEventListener('click', openCreatePost);
+    document.getElementById('createPostBtnMain')?.addEventListener('click', openCreatePost);
 }
 
 function showTab(tab) {
-    document.querySelectorAll('#chatContent, #friendsContent, #settingsContent, #feedContent')
+    document.querySelectorAll('#chatContent, #feedContent, #friendsContent, #settingsContent')
         .forEach(el => el.style.display = 'none');
 
     if (tab === 'chat') {
         document.getElementById('chatContent').style.display = 'flex';
-    } else if (tab === 'friends') {
-        document.getElementById('friendsContent').style.display = 'block';
-    } else if (tab === 'settings') {
-        document.getElementById('settingsContent').style.display = 'block';
+        document.querySelector('.message-input-area').style.display = 'flex';
+        document.getElementById('messagesContainer').style.display = 'flex';
+        document.getElementById('feedMainContainer').style.display = 'none';
+        document.getElementById('createPostBtnMain').style.display = 'none';
+        document.getElementById('chatTitle').textContent = '💬 Общий чат';
+        document.getElementById('chatSubtitle').textContent = 'Все пользователи';
+        loadGroupMessages();
     } else if (tab === 'feed') {
         document.getElementById('feedContent').style.display = 'block';
+        document.querySelector('.message-input-area').style.display = 'none';
+        document.getElementById('messagesContainer').style.display = 'none';
+        document.getElementById('feedMainContainer').style.display = 'flex';
+        document.getElementById('createPostBtnMain').style.display = 'block';
+        document.getElementById('chatTitle').textContent = '📰 Лента';
+        document.getElementById('chatSubtitle').textContent = 'Новости сообщества';
+        loadPosts();
+    } else if (tab === 'friends') {
+        document.getElementById('friendsContent').style.display = 'block';
+        document.querySelector('.message-input-area').style.display = 'none';
+        document.getElementById('messagesContainer').style.display = 'none';
+        document.getElementById('feedMainContainer').style.display = 'none';
+        document.getElementById('createPostBtnMain').style.display = 'none';
+        document.getElementById('chatTitle').textContent = '👥 Друзья';
+        document.getElementById('chatSubtitle').textContent = 'Управление друзьями';
+    } else if (tab === 'settings') {
+        document.getElementById('settingsContent').style.display = 'block';
+        document.querySelector('.message-input-area').style.display = 'none';
+        document.getElementById('messagesContainer').style.display = 'none';
+        document.getElementById('feedMainContainer').style.display = 'none';
+        document.getElementById('createPostBtnMain').style.display = 'none';
+        document.getElementById('chatTitle').textContent = '⚙️ Настройки';
+        document.getElementById('chatSubtitle').textContent = 'Редактирование профиля';
     }
 
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -398,9 +454,15 @@ function openGroupChat() {
     state.activeUserId = null;
     state.activeUsername = null;
 
+    showTab('chat');
+    document.querySelector('.message-input-area').style.display = 'flex';
+    document.getElementById('messagesContainer').style.display = 'flex';
+    document.getElementById('feedMainContainer').style.display = 'none';
+    document.getElementById('createPostBtnMain').style.display = 'none';
+
     document.getElementById('chatTitle').textContent = '💬 Общий чат';
     document.getElementById('chatSubtitle').textContent = 'Все пользователи';
-    showTab('chat');
+
     loadGroupMessages();
     renderDialogs();
 }
@@ -450,9 +512,15 @@ function openPrivateChat(userId, username) {
     state.activeUserId = userId;
     state.activeUsername = username;
 
+    showTab('chat');
+    document.querySelector('.message-input-area').style.display = 'flex';
+    document.getElementById('messagesContainer').style.display = 'flex';
+    document.getElementById('feedMainContainer').style.display = 'none';
+    document.getElementById('createPostBtnMain').style.display = 'none';
+
     document.getElementById('chatTitle').textContent = `✉️ @${username}`;
     document.getElementById('chatSubtitle').textContent = 'Личный чат';
-    showTab('chat');
+
     renderDialogs();
     loadPrivateMessages(userId);
 }
@@ -572,13 +640,10 @@ function addMessageToChat(message, isSelf = false) {
 
     let contentHtml = '';
     if (isImage) {
-        // Формируем правильный URL для изображения
         let imgUrl = message.mediaUrl;
-        // Если URL не начинается с / или http, добавляем /
         if (!imgUrl.startsWith('/') && !imgUrl.startsWith('http')) {
             imgUrl = '/' + imgUrl;
         }
-        // Если URL начинается с //, добавляем http:
         if (imgUrl.startsWith('//')) {
             imgUrl = 'http:' + imgUrl;
         }
@@ -609,13 +674,15 @@ function addMessageToChat(message, isSelf = false) {
         `;
     }
 
+    const timeClass = isSelf ? 'msg-time-self' : 'msg-time-other';
+
     const html = `
         <div class="message ${messageClass}" data-msgid="${message.id}">
             ${!isSelf ? `<div class="msg-sender">@${escapeHtml(senderName)}</div>` : ''}
             <div class="msg-content">${contentHtml} ${editedBadge}</div>
-            <div class="msg-time">${formatTime(message.createdAt)}</div>
+            <div class="msg-time ${timeClass}">${formatTime(message.createdAt)}</div>
             ${actionButtons}
-            ${isSelf ? `<div class="msg-status" style="font-size:10px;color:var(--text-muted);margin-top:2px;text-align:right;">${message.read ? '✅ Прочитано' : '📤 Отправлено'}</div>` : ''}
+            ${isSelf ? `<div class="msg-status">${message.read ? '✅ Прочитано' : '📤 Отправлено'}</div>` : ''}
         </div>
     `;
     messagesList.insertAdjacentHTML('beforeend', html);
@@ -712,11 +779,12 @@ async function sendMessage() {
     };
 
     try {
+        // Отправляем через WebSocket
         if (state.stompClient && state.connected) {
             state.stompClient.send('/app/chat.send', {}, JSON.stringify(payload));
             messageInput.value = '';
 
-            // Оптимистичное обновление
+            // Оптимистичное обновление - добавляем сообщение сразу
             const tempMessage = {
                 id: Date.now(),
                 content: content,
@@ -735,14 +803,45 @@ async function sendMessage() {
                     state.privateChats[state.activeUserId] = { user: null, messages: [], unread: 0 };
                 }
                 state.privateChats[state.activeUserId].messages.push(tempMessage);
+                // Обновляем диалоги
                 loadDialogs();
+                // Добавляем сообщение в чат
+                addMessageToChat(tempMessage, true);
+                // Отправляем запрос на сервер для сохранения
+                fetch(`${API_URL}/api/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${state.token}`
+                    },
+                    body: JSON.stringify(payload)
+                }).then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    return null;
+                }).then(msg => {
+                    if (msg && msg.id) {
+                        // Обновляем временное сообщение реальным
+                        const tempIndex = state.privateChats[state.activeUserId]?.messages.findIndex(m => m.id === tempMessage.id);
+                        if (tempIndex !== -1 && tempIndex !== undefined) {
+                            state.privateChats[state.activeUserId].messages[tempIndex] = msg;
+                            // Обновляем отображение
+                            const msgElement = document.querySelector(`.message[data-msgid="${tempMessage.id}"]`);
+                            if (msgElement) {
+                                msgElement.dataset.msgid = msg.id;
+                            }
+                        }
+                    }
+                }).catch(err => {
+                    console.error('Error saving message:', err);
+                });
             } else {
                 state.groupMessages.push(tempMessage);
+                addMessageToChat(tempMessage, true);
             }
-
-            addMessageToChat(tempMessage, true);
-            scrollToBottom();
         } else {
+            // Fallback: отправка через REST
             const response = await fetch(`${API_URL}/api/messages`, {
                 method: 'POST',
                 headers: {
@@ -854,6 +953,24 @@ function setupImageUpload() {
 }
 
 // ===== POSTS =====
+function getImageFormat(width, height) {
+    const ratio = width / height;
+
+    if (ratio >= 0.9 && ratio <= 1.1) {
+        return 'square';
+    } else if (ratio < 0.7) {
+        return 'portrait';
+    } else if (ratio >= 1.5 && ratio <= 2.0) {
+        return 'landscape';
+    } else if (ratio > 2.0) {
+        return 'wide';
+    } else if (ratio < 0.5) {
+        return 'tall';
+    } else {
+        return 'landscape';
+    }
+}
+
 async function loadPosts() {
     try {
         const response = await fetch(`${API_URL}/api/posts?page=0&size=20`, {
@@ -868,22 +985,23 @@ async function loadPosts() {
 
         const data = await response.json();
         state.posts = data.content || [];
-        renderPosts();
+        renderPostsInMain();
     } catch (error) {
         console.error('Load posts error:', error);
         showToast('❌ Не удалось загрузить ленту: ' + error.message, 'error');
     }
 }
 
-function renderPosts() {
-    const container = document.getElementById('postsList');
+function renderPostsInMain() {
+    const container = document.getElementById('feedMainList');
     if (!container) return;
 
     if (!state.posts || state.posts.length === 0) {
         container.innerHTML = `
-            <div style="padding:40px;text-align:center;color:var(--text-muted);">
-                📭 Пока нет постов<br>
-                <span style="font-size:12px;">Будьте первым, кто создаст пост!</span>
+            <div style="padding:60px 20px;text-align:center;color:var(--text-muted);">
+                <div style="font-size:48px;margin-bottom:16px;">📭</div>
+                <p>Пока нет постов</p>
+                <p style="font-size:13px;">Будьте первым, кто создаст пост!</p>
             </div>
         `;
         return;
@@ -896,34 +1014,45 @@ function renderPosts() {
 
         let imageHtml = '';
         if (hasImage) {
-            imageHtml = `<img src="${post.imageUrl}" style="width:100%;max-height:400px;object-fit:cover;border-radius:12px;margin-top:12px;cursor:pointer;" onclick="window.open('${post.imageUrl}')">`;
+            imageHtml = `
+                <div class="post-image-wrapper">
+                    <img src="${post.imageUrl}" 
+                         class="post-image" 
+                         data-format="pending"
+                         onclick="window.open('${post.imageUrl}')"
+                         loading="lazy">
+                </div>
+            `;
         }
 
         let commentsHtml = '';
         if (post.comments && post.comments.length > 0) {
-            commentsHtml = post.comments.slice(0, 3).map(c => {
-                const commentImage = c.imageUrl ? `<img src="${c.imageUrl}" style="max-width:60px;max-height:60px;border-radius:8px;object-fit:cover;margin-top:4px;">` : '';
+            commentsHtml = `
+                <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
+                    ${post.comments.slice(0, 5).map(c => {
+                const commentImage = c.imageUrl ?
+                    `<div class="post-comment-image-wrapper"><img src="${c.imageUrl}" class="post-comment-image" onclick="window.open('${c.imageUrl}')"></div>` : '';
                 return `
-                    <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-color);">
-                        <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">
-                            ${c.author.firstName?.[0] || c.author.username?.[0] || '👤'}
-                        </div>
-                        <div style="flex:1;">
-                            <div style="font-size:12px;font-weight:500;">@${c.author.username}</div>
-                            <div style="font-size:13px;">${escapeHtml(c.content)}</div>
-                            ${commentImage}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            if (post.comments.length > 3) {
-                commentsHtml += `<div style="color:var(--text-muted);font-size:12px;padding:4px 0;">Ещё ${post.comments.length - 3} комментариев...</div>`;
-            }
+                            <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-color);">
+                                <div style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">
+                                    ${c.author.firstName?.[0] || c.author.username?.[0] || '👤'}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:12px;font-weight:600;">@${c.author.username}</div>
+                                    <div style="font-size:13px;line-height:1.4;">${escapeHtml(c.content)}</div>
+                                    ${commentImage}
+                                </div>
+                            </div>
+                        `;
+            }).join('')}
+                    ${post.comments.length > 5 ?
+                `<div style="color:var(--text-muted);font-size:12px;padding:8px 0 4px 38px;">Ещё ${post.comments.length - 5} комментариев...</div>` : ''}
+                </div>
+            `;
         }
 
         return `
-            <div class="post-item">
+            <div class="post-item" data-postid="${post.id}">
                 <div class="post-header">
                     <div class="post-avatar">
                         ${post.author.firstName?.[0] || post.author.username?.[0] || '👤'}
@@ -932,22 +1061,42 @@ function renderPosts() {
                         <div class="post-author">@${post.author.username}</div>
                         <div class="post-time">${formatTime(post.createdAt)}</div>
                     </div>
-                    ${isAuthor ? `<button onclick="deletePost(${post.id})" style="background:transparent;border:none;color:#ff6b6b;cursor:pointer;margin-left:auto;">🗑️</button>` : ''}
+                    ${isAuthor ? `<button onclick="deletePost(${post.id})" style="background:transparent;border:none;color:#ff6b6b;cursor:pointer;margin-left:auto;font-size:16px;">🗑️</button>` : ''}
                 </div>
                 <div class="post-content">${escapeHtml(post.content)}</div>
                 ${imageHtml}
                 <div class="post-actions">
-                    <button onclick="toggleLike(${post.id})" style="background:transparent;border:none;color:${liked ? '#7c3aed' : 'var(--text-muted)'};cursor:pointer;font-size:14px;">
+                    <button onclick="toggleLike(${post.id})" class="${liked ? 'liked' : ''}">
                         ${liked ? '❤️' : '🤍'} ${post.likesCount || 0}
                     </button>
-                    <button onclick="openCommentModal(${post.id})" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;">
+                    <button onclick="openCommentModal(${post.id})">
                         💬 ${post.comments?.length || 0}
                     </button>
                 </div>
-                ${commentsHtml ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">${commentsHtml}</div>` : ''}
+                ${commentsHtml}
             </div>
         `;
     }).join('');
+
+    setTimeout(() => {
+        document.querySelectorAll('.post-item .post-image').forEach(img => {
+            const setFormat = function() {
+                const width = this.naturalWidth;
+                const height = this.naturalHeight;
+                if (width > 0 && height > 0) {
+                    const format = getImageFormat(width, height);
+                    this.className = `post-image format-${format}`;
+                    this.dataset.format = format;
+                }
+            };
+
+            if (img.complete && img.naturalWidth > 0) {
+                setFormat.call(img);
+            } else {
+                img.onload = setFormat;
+            }
+        });
+    }, 150);
 }
 
 // ===== CREATE POST =====
@@ -969,6 +1118,32 @@ async function createPost() {
     }
 
     const imageFile = document.getElementById('postImage').files[0];
+
+    if (imageFile) {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            img.src = e.target.result;
+        };
+
+        img.onload = function() {
+            const width = img.width;
+            const height = img.height;
+            const ratio = width / height;
+
+            let formatName = 'стандартный';
+            if (ratio >= 0.9 && ratio <= 1.1) formatName = 'квадрат (1080×1080)';
+            else if (ratio < 0.7) formatName = 'вертикальный (1080×1920)';
+            else if (ratio >= 1.5 && ratio <= 2.0) formatName = 'горизонтальный (1200×628)';
+            else if (ratio > 2.0) formatName = 'панорамный';
+            else if (ratio < 0.5) formatName = 'очень узкий';
+
+            showToast(`📐 Формат: ${formatName}`, 'info');
+        };
+
+        reader.readAsDataURL(imageFile);
+    }
 
     const formData = new FormData();
     formData.append('content', content);
@@ -992,7 +1167,7 @@ async function createPost() {
 
         const post = await response.json();
         state.posts.unshift(post);
-        renderPosts();
+        renderPostsInMain();
         closeCreatePost();
         showToast('✅ Пост опубликован!', 'success');
     } catch (error) {
@@ -1442,7 +1617,6 @@ function connectWebSocket() {
                     try {
                         const data = JSON.parse(payload.body);
 
-                        // Проверка на уведомление об удалении
                         if (data.type === 'MESSAGE_DELETED') {
                             const msgElement = document.querySelector(`.message[data-msgid="${data.messageId}"]`);
                             if (msgElement) {
@@ -1452,7 +1626,6 @@ function connectWebSocket() {
                             return;
                         }
 
-                        // Проверка на системное сообщение
                         if (data.type === 'JOIN') {
                             showToast(data.message, 'info');
                             return;
@@ -1460,20 +1633,21 @@ function connectWebSocket() {
 
                         const message = data;
                         if (message.sender && message.sender.id !== state.user.id) {
+                            // Проверяем, это личное или групповое
                             if (message.receiver) {
-                                // Приватное сообщение в общем топике (если сообщение групповое)
+                                // Личное сообщение из общего топика - добавляем в приватный чат
                                 const senderId = message.sender.id;
                                 if (!state.privateChats[senderId]) {
                                     state.privateChats[senderId] = { user: null, messages: [], unread: 0 };
                                 }
 
-                                // Проверяем, нет ли уже такого сообщения
                                 const exists = state.privateChats[senderId].messages.some(m => m.id === message.id);
                                 if (!exists) {
                                     state.privateChats[senderId].messages.push(message);
                                     state.privateChats[senderId].unread = (state.privateChats[senderId].unread || 0) + 1;
                                     loadDialogs();
 
+                                    // Если этот чат открыт - показываем сообщение
                                     if (state.currentChat === 'private' && state.activeUserId === senderId) {
                                         addMessageToChat(message, false);
                                         state.privateChats[senderId].unread = 0;
@@ -1491,7 +1665,6 @@ function connectWebSocket() {
                                         addMessageToChat(message, false);
                                     }
                                 } else {
-                                    // Обновление существующего сообщения (редактирование)
                                     const index = state.groupMessages.findIndex(m => m.id === message.id);
                                     if (index !== -1) {
                                         state.groupMessages[index] = message;
@@ -1520,7 +1693,6 @@ function connectWebSocket() {
                                 state.privateChats[senderId] = { user: null, messages: [], unread: 0 };
                             }
 
-                            // Проверяем, нет ли уже такого сообщения
                             const exists = state.privateChats[senderId].messages.some(m => m.id === message.id);
                             if (!exists) {
                                 state.privateChats[senderId].messages.push(message);
@@ -1535,7 +1707,6 @@ function connectWebSocket() {
                                     }
                                 }
                             } else {
-                                // Обновление существующего сообщения
                                 const index = state.privateChats[senderId].messages.findIndex(m => m.id === message.id);
                                 if (index !== -1) {
                                     state.privateChats[senderId].messages[index] = message;
@@ -1550,7 +1721,6 @@ function connectWebSocket() {
                     }
                 });
 
-                // Отправляем приветствие
                 setTimeout(() => {
                     try {
                         state.stompClient.send('/app/chat.addUser', {}, JSON.stringify({
@@ -1629,7 +1799,6 @@ function showToast(text, type = 'info') {
 
 // ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded', function() {
-    // Auth tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const tab = this.dataset.tab;
@@ -1642,7 +1811,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Login
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const username = document.getElementById('loginUsername').value.trim();
@@ -1652,7 +1820,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Register
     document.getElementById('registerForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const data = {
@@ -1667,7 +1834,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Logout
     document.getElementById('logoutBtn')?.addEventListener('click', function() {
         localStorage.removeItem('violetchat_token');
         state.token = null;
@@ -1680,7 +1846,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loadRecommendations();
     });
 
-    // Send message
     document.getElementById('sendMessageBtn')?.addEventListener('click', sendMessage);
     document.getElementById('messageInput')?.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1689,15 +1854,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Search
     document.getElementById('searchInput')?.addEventListener('input', function() {
         searchUsers(this.value);
     });
 
-    // Save settings
     document.getElementById('saveSettingsBtn')?.addEventListener('click', saveSettings);
 
-    // Modals
     document.getElementById('createPostModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeCreatePost();
     });
