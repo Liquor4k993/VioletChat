@@ -67,9 +67,13 @@ public class MessageService {
 
         MessageResponse response = toResponse(saved);
 
+        // Отправляем через WebSocket
         if (receiver != null) {
+            // Личное сообщение - отправляем обоим участникам
             chatService.sendPrivateMessage(response, receiver.getId());
+            chatService.sendPrivateMessage(response, sender.getId());
         } else {
+            // Групповое сообщение - в общий чат
             chatService.broadcastNewMessage(response);
         }
 
@@ -95,19 +99,27 @@ public class MessageService {
         Message message = Message.builder()
                 .sender(sender)
                 .receiver(receiver)
-                .content("📷 Image")
+                .content("📷 Изображение")
                 .groupMessage(request.isGroupMessage())
                 .messageType("IMAGE")
                 .mediaUrl(imageUrl)
                 .build();
 
         Message saved = messageRepository.save(message);
+        log.info("📷 Image message saved: {}", saved.getId());
+
         MessageResponse response = toResponse(saved);
 
+        // Отправляем через WebSocket
         if (receiver != null) {
+            // Личное сообщение - отправляем обоим участникам
             chatService.sendPrivateMessage(response, receiver.getId());
+            chatService.sendPrivateMessage(response, sender.getId());
+            log.info("💌 Image message sent to user: {}", receiver.getId());
         } else {
+            // Групповое сообщение - в общий чат
             chatService.broadcastNewMessage(response);
+            log.info("📡 Image message broadcasted to group");
         }
 
         return response;
@@ -137,6 +149,7 @@ public class MessageService {
 
         if (message.getReceiver() != null) {
             chatService.sendPrivateMessage(response, message.getReceiver().getId());
+            chatService.sendPrivateMessage(response, message.getSender().getId());
         } else {
             chatService.broadcastNewMessage(response);
         }
@@ -156,15 +169,18 @@ public class MessageService {
         }
 
         message.setDeleted(true);
-        message.setContent("Message deleted");
+        message.setContent("Сообщение удалено");
         message.setUpdatedAt(LocalDateTime.now());
 
         messageRepository.save(message);
         log.info("🗑️ Message {} marked as deleted", messageId);
 
         MessageResponse response = toResponse(message);
+
+        // Отправляем уведомление об удалении
         if (message.getReceiver() != null) {
             chatService.sendPrivateMessage(response, message.getReceiver().getId());
+            chatService.sendPrivateMessage(response, message.getSender().getId());
         } else {
             chatService.broadcastNewMessage(response);
         }

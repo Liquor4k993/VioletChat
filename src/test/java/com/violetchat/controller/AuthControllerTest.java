@@ -1,6 +1,7 @@
 package com.violetchat.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.violetchat.config.TestSecurityConfig;
 import com.violetchat.dto.request.LoginRequest;
 import com.violetchat.dto.request.RegisterRequest;
 import com.violetchat.entity.User;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
+@Import(TestSecurityConfig.class)  // Используем тестовую конфигурацию
 class AuthControllerTest {
 
     @Autowired
@@ -57,12 +60,11 @@ class AuthControllerTest {
                 .build();
 
         when(userService.registerUser(any(RegisterRequest.class))).thenReturn(user);
-        when(userService.convertToResponse(any(User.class))).thenReturn(null);
+        when(userService.toResponse(any(User.class))).thenReturn(null);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))  // ← ДОБАВИТЬ!
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
     }
 
@@ -76,14 +78,18 @@ class AuthControllerTest {
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password123");
         when(authenticationManager.authenticate(any())).thenReturn(auth);
 
-        User user = User.builder().id(1L).username("testuser").build();
+        User user = User.builder()
+                .id(1L)
+                .username("testuser")
+                .build();
+
         when(userService.findByUsername("testuser")).thenReturn(user);
         when(jwtService.generateToken(any(User.class))).thenReturn("jwt-token");
+        when(userService.toResponse(any(User.class))).thenReturn(null);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))  // ← ДОБАВИТЬ!
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("jwt-token"));
     }

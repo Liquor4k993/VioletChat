@@ -572,11 +572,26 @@ function addMessageToChat(message, isSelf = false) {
 
     let contentHtml = '';
     if (isImage) {
+        // Формируем правильный URL для изображения
         let imgUrl = message.mediaUrl;
+        // Если URL не начинается с / или http, добавляем /
         if (!imgUrl.startsWith('/') && !imgUrl.startsWith('http')) {
             imgUrl = '/' + imgUrl;
         }
-        contentHtml = `<img src="${imgUrl}" style="max-width:300px;max-height:300px;border-radius:12px;object-fit:cover;cursor:pointer;" onclick="window.open('${imgUrl}')" alt="Изображение" loading="lazy">`;
+        // Если URL начинается с //, добавляем http:
+        if (imgUrl.startsWith('//')) {
+            imgUrl = 'http:' + imgUrl;
+        }
+        contentHtml = `
+            <div style="margin:4px 0;">
+                <img src="${imgUrl}" 
+                     style="max-width:300px;max-height:300px;border-radius:12px;object-fit:cover;cursor:pointer;" 
+                     onclick="window.open('${imgUrl}')" 
+                     alt="Изображение" 
+                     loading="lazy"
+                     onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\\'color:var(--text-muted);font-size:13px;\\'>❌ Ошибка загрузки изображения</span>'">
+            </div>
+        `;
     } else {
         contentHtml = escapeHtml(content);
     }
