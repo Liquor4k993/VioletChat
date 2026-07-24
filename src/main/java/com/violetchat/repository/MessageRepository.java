@@ -18,9 +18,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     Page<Message> findByGroupMessageTrueOrderByCreatedAtDesc(Pageable pageable);
 
-    @Query("SELECT m FROM Message m WHERE m.groupMessage = true ORDER BY m.createdAt DESC")
+    @Query("SELECT m FROM Message m WHERE m.groupMessage = true AND m.deleted = false ORDER BY m.createdAt DESC")
     List<Message> findRecentGroupMessages(Pageable pageable);
 
-    @Query("SELECT COUNT(m) FROM Message m WHERE m.receiver = :user AND m.read = false")
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.receiver = :user AND m.read = false AND m.deleted = false")
     long countUnreadMessages(@Param("user") User user);
 }

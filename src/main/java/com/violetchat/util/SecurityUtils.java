@@ -14,11 +14,11 @@ public class SecurityUtils {
     private final UserService userService;
 
     public Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("User is not authenticated");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new IllegalStateException("User not authenticated");
         }
-        String username = authentication.getName();
+        String username = auth.getName();
         User user = userService.findByUsername(username);
         return user.getId();
     }

@@ -6,127 +6,199 @@
     <title>💜 VioletChat</title>
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SockJS и STOMP для WebSocket -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
 <body>
-<div id="app">
-    <!-- ЭКРАН АВТОРИЗАЦИИ -->
-    <div id="authScreen" class="auth-screen">
-        <div class="auth-container">
-            <div class="auth-box">
-                <div class="auth-header">
-                    <div class="logo">💜 VioletChat</div>
-                    <p class="subtitle">Фиолетовое общение</p>
+
+<!-- ===== LANDING PAGE ===== -->
+<div id="landingPage" class="landing-page">
+    <div class="landing-container">
+
+        <!-- LEFT: Feed + Recommendations -->
+        <div class="landing-left">
+            <div class="landing-header">
+                <div class="logo-large">💜 VioletChat</div>
+                <p class="landing-slogan">Общайся, делись, вдохновляйся</p>
+            </div>
+
+            <!-- Feed -->
+            <div class="landing-feed" id="landingFeed">
+                <div class="feed-loader">📰 Загрузка...</div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="recommendations-section">
+                <div class="recommendations-header">
+                    <span>🌟 Рекомендации</span>
+                    <span class="recommendations-refresh" onclick="loadRecommendations()">🔄</span>
                 </div>
-
-                <div class="auth-tabs">
-                    <button class="tab-btn active" data-tab="login">Вход</button>
-                    <button class="tab-btn" data-tab="register">Регистрация</button>
+                <div id="recommendationsList" class="recommendations-list">
+                    <div style="text-align:center;color:var(--text-muted);padding:8px;">Загрузка...</div>
                 </div>
+            </div>
+        </div>
 
-                <form id="loginForm" class="auth-form active">
-                    <div class="form-group">
-                        <label>Имя пользователя</label>
-                        <input type="text" id="loginUsername" placeholder="Введите имя" required>
+        <!-- RIGHT: Auth -->
+        <div class="landing-right">
+            <div class="auth-wrapper">
+                <div class="auth-box">
+                    <div class="auth-tabs">
+                        <button class="tab-btn active" data-tab="login">Вход</button>
+                        <button class="tab-btn" data-tab="register">Регистрация</button>
                     </div>
-                    <div class="form-group">
-                        <label>Пароль</label>
-                        <input type="password" id="loginPassword" placeholder="Введите пароль" required>
-                    </div>
-                    <button type="submit" class="btn-primary">💜 Войти</button>
-                </form>
 
-                <form id="registerForm" class="auth-form">
-                    <div class="form-group">
-                        <label>Имя пользователя</label>
-                        <input type="text" id="regUsername" placeholder="Введите имя" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="regEmail" placeholder="Введите email" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Пароль</label>
-                        <input type="password" id="regPassword" placeholder="Минимум 6 символов" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Имя</label>
-                        <input type="text" id="regFirstName" placeholder="Ваше имя">
-                    </div>
-                    <div class="form-group">
-                        <label>Фамилия</label>
-                        <input type="text" id="regLastName" placeholder="Ваша фамилия">
-                    </div>
-                    <button type="submit" class="btn-primary">💜 Зарегистрироваться</button>
-                </form>
+                    <form id="loginForm" class="auth-form active">
+                        <div class="form-group">
+                            <label>👤 Имя пользователя</label>
+                            <input type="text" id="loginUsername" placeholder="Введите имя" required>
+                        </div>
+                        <div class="form-group">
+                            <label>🔒 Пароль</label>
+                            <input type="password" id="loginPassword" placeholder="Введите пароль" required>
+                        </div>
+                        <button type="submit" class="btn-primary">💜 Войти</button>
+                    </form>
 
-                <div id="authMessage" class="auth-message" style="display:none;"></div>
+                    <form id="registerForm" class="auth-form">
+                        <div class="form-group">
+                            <label>👤 Имя пользователя</label>
+                            <input type="text" id="regUsername" placeholder="Введите имя" required>
+                        </div>
+                        <div class="form-group">
+                            <label>📧 Email</label>
+                            <input type="email" id="regEmail" placeholder="Введите email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>🔒 Пароль</label>
+                            <input type="password" id="regPassword" placeholder="Минимум 6 символов" required>
+                        </div>
+                        <div class="form-group">
+                            <label>📝 Имя</label>
+                            <input type="text" id="regFirstName" placeholder="Ваше имя">
+                        </div>
+                        <div class="form-group">
+                            <label>📝 Фамилия</label>
+                            <input type="text" id="regLastName" placeholder="Ваша фамилия">
+                        </div>
+                        <button type="submit" class="btn-primary">💜 Зарегистрироваться</button>
+                    </form>
+
+                    <div id="authMessage" class="auth-message" style="display:none;"></div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- ЭКРАН ЧАТА -->
-    <div id="chatScreen" class="chat-screen" style="display: none;">
-        <div class="chat-container">
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    <div class="logo-small">💜 VioletChat</div>
-                    <button id="logoutBtn" class="btn-icon" title="Выйти">🚪</button>
+<!-- ===== CHAT SCREEN ===== -->
+<div id="chatScreen" class="chat-screen" style="display:none;">
+    <div class="chat-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-small">💜 VioletChat</div>
+                <button id="logoutBtn" class="btn-icon">🚪</button>
+            </div>
+            <div class="user-profile">
+                <div class="avatar" id="userAvatar">👤</div>
+                <div class="user-info">
+                    <div class="username" id="sidebarUsername">User</div>
+                    <div class="user-status"><span class="status-dot online"></span> Online</div>
                 </div>
-
-                <div class="user-profile" id="userProfile">
-                    <div class="avatar" id="userAvatar">👤</div>
-                    <div class="user-info">
-                        <div class="username" id="sidebarUsername">User</div>
-                        <div class="user-status">
-                            <span class="status-dot online"></span> Online
+            </div>
+            <div class="sidebar-nav">
+                <button class="nav-btn active" id="chatTab">💬 Чаты</button>
+                <button class="nav-btn" id="feedTab">📰 Лента</button>
+                <button class="nav-btn" id="friendsTab">👥 Друзья</button>
+                <button class="nav-btn" id="settingsTab">⚙️ Настройки</button>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:8px 0;">
+                <div id="chatContent" style="display:flex;flex-direction:column;height:100%;">
+                    <div class="user-list" style="flex:1;">
+                        <div style="padding:0 16px 8px 16px;">
+                            <button onclick="openGroupChat()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--primary);background:var(--primary);color:white;cursor:pointer;font-size:14px;transition:all 0.2s;">💬 Общий чат</button>
+                            <div class="section-title" style="margin-top:12px;">📋 Личные диалоги</div>
                         </div>
+                        <div id="chatList"></div>
                     </div>
                 </div>
-
-                <div class="sidebar-nav">
-                    <button class="nav-btn active" data-chat="group">
-                        💬 Общий чат
-                    </button>
-                    <button class="nav-btn" data-chat="private">
-                        ✉️ Личные
-                    </button>
+                <div id="friendsContent" style="display:none;padding:0 16px;">
+                    <div class="section-title">👥 Поиск</div>
+                    <input type="text" id="searchInput" placeholder="🔍 Поиск..." style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-light);font-size:14px;margin-bottom:12px;">
+                    <div id="searchResults"></div>
+                    <div class="section-title" style="margin-top:16px;">📨 Заявки</div>
+                    <div id="pendingRequests"></div>
+                    <div class="section-title" style="margin-top:16px;">👫 Друзья</div>
+                    <div id="friendsList"></div>
                 </div>
-
-                <div class="user-list">
-                    <div class="section-title">
-                        👥 Онлайн <span class="online-count" id="onlineCount">0</span>
+                <div id="settingsContent" style="display:none;padding:0 16px;">
+                    <div class="section-title">⚙️ Профиль</div>
+                    <div style="display:flex;flex-direction:column;gap:12px;padding:8px 0;">
+                        <div class="form-group"><label>👤 Username</label><input type="text" id="settingsUsername" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-light);font-size:14px;" disabled></div>
+                        <div class="form-group"><label>📧 Email</label><input type="email" id="settingsEmail" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-light);font-size:14px;"></div>
+                        <div class="form-group"><label>📝 Имя</label><input type="text" id="settingsFirstName" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-light);font-size:14px;"></div>
+                        <div class="form-group"><label>📝 Фамилия</label><input type="text" id="settingsLastName" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-light);font-size:14px;"></div>
+                        <button id="saveSettingsBtn" class="btn-primary">💾 Сохранить</button>
                     </div>
-                    <div id="onlineUsers">
-                        <div class="online-user placeholder">
-                            <div class="avatar-small">👤</div>
-                            <div class="user-name">Загрузка...</div>
-                        </div>
-                    </div>
+                    <div class="section-title" style="margin-top:20px;">🚫 ЧС</div>
+                    <div id="blockedList" style="padding:8px 0;"></div>
                 </div>
-            </aside>
-
-            <main class="chat-main">
-                <div class="chat-header">
+                <div id="feedContent" style="display:none;padding:0 16px;overflow-y:auto;height:100%;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-color);">
+                        <div class="section-title" style="margin:0;">📰 Лента</div>
+                        <button id="createPostBtn" class="btn-primary" style="padding:8px 16px;font-size:13px;">➕ Создать пост</button>
+                    </div>
+                    <div id="postsList" style="padding:12px 0;"></div>
+                </div>
+            </div>
+        </aside>
+        <main class="chat-main">
+            <div class="chat-header">
+                <div>
                     <div class="chat-title" id="chatTitle">💬 Общий чат</div>
-                    <div class="chat-actions">
-                            <span id="connectionStatus" class="connection-status">
-                                <span class="status-dot online"></span> Подключено
-                            </span>
-                    </div>
+                    <div class="chat-subtitle" id="chatSubtitle" style="font-size:12px;color:var(--text-muted);">Все пользователи</div>
                 </div>
+                <div class="chat-actions"><span id="connectionStatus">🟢 Подключено</span></div>
+            </div>
+            <div class="messages-container" id="messagesContainer">
+                <div id="messagesList" class="messages-list"></div>
+            </div>
+            <div class="message-input-area">
+                <button id="imageUploadBtn" class="btn-icon" title="Отправить изображение" style="font-size:24px;background:var(--bg-input);border:1px solid var(--border-color);border-radius:12px;padding:8px 12px;cursor:pointer;">📷</button>
+                <textarea id="messageInput" placeholder="Введите сообщение..." rows="2"></textarea>
+                <button id="sendMessageBtn" class="btn-send">📤 Отправить</button>
+            </div>
+        </main>
+    </div>
+</div>
 
-                <div class="messages-container" id="messagesContainer">
-                    <div id="messagesList" class="messages-list"></div>
-                </div>
+<!-- ===== MODALS ===== -->
+<div id="createPostModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-card);border-radius:24px;padding:32px;max-width:500px;width:100%;border:1px solid var(--border-color);margin:20px;">
+        <h3 style="color:var(--text-light);margin-bottom:20px;">📝 Создать пост</h3>
+        <textarea id="postContent" placeholder="Что у вас нового?" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-light);font-size:14px;resize:vertical;min-height:100px;font-family:inherit;"></textarea>
+        <div style="margin:12px 0;">
+            <label style="color:var(--text-muted);font-size:13px;">📷 Изображение</label>
+            <input type="file" id="postImage" accept="image/*" style="color:var(--text-light);display:block;margin-top:4px;">
+        </div>
+        <div style="display:flex;gap:12px;">
+            <button onclick="closeCreatePost()" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;">Отмена</button>
+            <button onclick="createPost()" class="btn-primary" style="flex:2;">📤 Опубликовать</button>
+        </div>
+    </div>
+</div>
 
-                <div class="message-input-area">
-                    <textarea id="messageInput" placeholder="Введите сообщение..." rows="2"></textarea>
-                    <button id="sendMessageBtn" class="btn-send">📤 Отправить</button>
-                </div>
-            </main>
+<div id="commentModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-card);border-radius:24px;padding:32px;max-width:500px;width:100%;border:1px solid var(--border-color);margin:20px;">
+        <h3 style="color:var(--text-light);margin-bottom:20px;">💬 Добавить комментарий</h3>
+        <textarea id="commentContent" placeholder="Ваш комментарий..." style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-input);color:var(--text-light);font-size:14px;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
+        <div style="margin:12px 0;">
+            <label style="color:var(--text-muted);font-size:13px;">📷 Изображение</label>
+            <input type="file" id="commentImage" accept="image/*" style="color:var(--text-light);display:block;margin-top:4px;">
+        </div>
+        <div style="display:flex;gap:12px;">
+            <button onclick="closeComment()" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--border-color);background:transparent;color:var(--text-muted);cursor:pointer;">Отмена</button>
+            <button onclick="submitComment()" class="btn-primary" style="flex:2;">💬 Отправить</button>
         </div>
     </div>
 </div>

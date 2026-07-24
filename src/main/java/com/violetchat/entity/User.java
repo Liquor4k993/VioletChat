@@ -70,14 +70,32 @@ public class User implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() { return active; }
+    public String getUsername() {
+        return username;
+    }
 
     @Override
-    public boolean isAccountNonLocked() { return active; }
+    public String getPassword() {
+        return password;
+    }
 
     @Override
-    public boolean isCredentialsNonExpired() { return active; }
+    public boolean isAccountNonExpired() {
+        return active;
+    }
 
     @Override
-    public boolean isEnabled() { return active; }
+    public boolean isAccountNonLocked() {
+        return active;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return active;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return active;
+    }
 }

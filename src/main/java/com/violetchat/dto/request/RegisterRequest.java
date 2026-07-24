@@ -13,22 +13,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterRequest {
-
-    @NotBlank(message = "Имя пользователя обязательно")
-    @Size(min = 3, max = 50)
+    @NotBlank @Size(min = 3, max = 50)
     private String username;
-
-    @NotBlank(message = "Email обязателен")
-    @Email(message = "Некорректный email")
+    @NotBlank @Email
     private String email;
-
-    @NotBlank(message = "Пароль обязателен")
-    @Size(min = 6, message = "Пароль должен быть не менее 6 символов")
+    @NotBlank @Size(min = 6)
     private String password;
-
-    @Size(max = 50)
     private String firstName;
-
-    @Size(max = 50)
     private String lastName;
 }

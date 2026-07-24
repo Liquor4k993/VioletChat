@@ -1,7 +1,6 @@
 package com.violetchat.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,13 +11,31 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessageRequest {
-
-    @NotBlank(message = "Содержимое сообщения обязательно")
-    @Size(max = 1000, message = "Сообщение не должно превышать 1000 символов")
+    @NotBlank
     private String content;
 
     private Long receiverId;
 
     @Builder.Default
-    private boolean groupMessage = false;
+    private boolean groupMessage = true;
+
+    @Builder.Default
+    private String messageType = "TEXT";
+
+    private String mediaUrl;
+
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+
+    public Long getReceiverId() { return receiverId; }
+    public void setReceiverId(Long receiverId) { this.receiverId = receiverId; }
+
+    public boolean isGroupMessage() { return groupMessage; }
+    public void setGroupMessage(boolean groupMessage) { this.groupMessage = groupMessage; }
+
+    public String getMessageType() { return messageType; }
+    public void setMessageType(String messageType) { this.messageType = messageType; }
+
+    public String getMediaUrl() { return mediaUrl; }
+    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
 }
